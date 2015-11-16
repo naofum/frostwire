@@ -17,6 +17,15 @@ apply from: "$rootDir/common/dependencies.gradle"
 
 sourceCompatibility = 1.7
 
+ext {
+    swtWindowingLibrary = swtWindowingLibrary(System.properties['os.name'])
+    swtArch = swtArch(System.properties['os.arch'])
+    swtPlatform = swtPlatform(System.properties['os.name'])
+
+    swtVersion = '4.3'
+    swtArtifactName = "org.eclipse.swt.${swtWindowingLibrary}.${swtPlatform}.${swtArch}"
+}
+
 compileJava {
     options.encoding = '8859_1'
 }
@@ -39,6 +48,7 @@ dependencies {
     compile 'org.apache.lucene:lucene-core:3.5.0'
     compile 'net.jthink:jaudiotagger:2.2.4'
     compile 'com.frostwire:jlibtorrent:1.1.0.12'
+    compile "org.eclipse.swt:${swtArtifactName}:${swtVersion}"
 
     compile fileTree(dir: 'desktop/lib/jars', include: ['*.jar'])
 }
@@ -157,3 +167,30 @@ task gettextBundle {
 
 gettextExtract.dependsOn gettextInit
 gettextBundle.dependsOn gettextInit
+
+def swtWindowingLibrary(String platform) {
+    switch (platform.replaceAll(' ', '').toLowerCase()) {
+        case ~/.*linux.*/:  return 'gtk'
+        case ~/.*darwin.*/: return 'cocoa'
+        case ~/.*osx.*/:    return 'cocoa'
+        case ~/.*win.*/:    return 'win32'
+        default:            return null
+    }
+}
+
+def swtArch(String arch) {
+    switch(arch) {
+        case ~/.*64.*/: return 'x86_64'
+        default:        return 'x86'
+    }
+}
+
+def swtPlatform(String platform) {
+    switch(platform.replaceAll(' ', '').toLowerCase()) {
+        case ~/.*linux.*/:  return 'linux'
+        case ~/.*darwin.*/: return 'macosx'
+        case ~/.*osx.*/:    return 'macosx'
+        case ~/.*win.*/:    return 'win32'
+        default:            return platform
+    }
+}
