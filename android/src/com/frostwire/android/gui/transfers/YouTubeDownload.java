@@ -22,10 +22,13 @@ import android.util.Log;
 import com.frostwire.android.R;
 import com.frostwire.android.core.SystemPaths;
 import com.frostwire.android.gui.Librarian;
+import com.frostwire.android.gui.MainApplication;
 import com.frostwire.android.gui.services.Engine;
+import com.frostwire.logging.Logger;
 import com.frostwire.search.youtube.YouTubeExtractor.LinkInfo;
 import com.frostwire.search.youtube.YouTubeCrawledSearchResult;
 import com.frostwire.transfers.TransferItem;
+import com.frostwire.util.FileSystem;
 import com.frostwire.util.http.HttpClient;
 import com.frostwire.util.http.HttpClient.HttpClientListener;
 import com.frostwire.util.HttpClientFactory;
@@ -47,7 +50,9 @@ import java.util.Map;
  */
 public final class YouTubeDownload implements DownloadTransfer {
 
-    private static final String TAG = "FW.HttpDownload";
+    private static final Logger LOG = Logger.getLogger(YouTubeDownload.class);
+
+    private static final FileSystem FILE_SYSTEM = MainApplication.FILE_SYSTEM;
 
     private static final int STATUS_DOWNLOADING = 1;
     private static final int STATUS_COMPLETE = 2;
@@ -112,7 +117,7 @@ public final class YouTubeDownload implements DownloadTransfer {
     }
 
     private void ensureDirectoryExits(File dir) {
-        if (dir == null || !dir.isDirectory() && !dir.mkdirs()) {
+        if (dir == null || !dir.isDirectory() && !FILE_SYSTEM.mkdirs(dir.getAbsolutePath())) {
             this.status = STATUS_SAVE_DIR_ERROR;
         }
     }
@@ -345,9 +350,9 @@ public final class YouTubeDownload implements DownloadTransfer {
     private void error(Throwable e) {
         if (status != STATUS_CANCELLED) {
             if (e != null) {
-                Log.e(TAG, String.format("Error downloading url: %s", sr.getDownloadUrl()), e);
+                LOG.info(String.format("Error downloading url: %s", sr.getDownloadUrl()), e);
             } else {
-                Log.e(TAG, String.format("Error downloading url: %s", sr.getDownloadUrl()));
+                LOG.info(String.format("Error downloading url: %s", sr.getDownloadUrl()));
             }
 
             status = STATUS_ERROR;
@@ -374,7 +379,7 @@ public final class YouTubeDownload implements DownloadTransfer {
         return sr.getDetailsUrl();
     }
 
-    private static enum DownloadType {
+    private enum DownloadType {
         VIDEO, DASH, DEMUX
     }
 
