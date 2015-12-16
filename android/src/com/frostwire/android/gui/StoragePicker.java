@@ -193,7 +193,7 @@ public final class StoragePicker {
     /**
      * Extract the via {@link Document#COLUMN_DOCUMENT_ID} from the given URI.
      */
-    public static String getTreeDocumentId(Uri documentUri) {
+    private static String getTreeDocumentId(Uri documentUri) {
         final List<String> paths = documentUri.getPathSegments();
         if (paths.size() >= 2 && PATH_TREE.equals(paths.get(0))) {
             return paths.get(1);

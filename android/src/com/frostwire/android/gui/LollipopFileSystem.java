@@ -20,7 +20,7 @@ package com.frostwire.android.gui;
 
 import android.content.Context;
 import android.net.Uri;
-import android.preference.PreferenceManager;
+import android.os.storage.StorageManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.provider.DocumentFile;
 import com.frostwire.logging.Logger;
@@ -29,6 +29,8 @@ import com.frostwire.util.FileSystem;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -117,45 +119,18 @@ public final class LollipopFileSystem implements FileSystem {
             return DocumentFile.fromFile(file);
         }
 
-        boolean originalDirectory = false;
-        String relativePath = null;
-        try {
-            String fullPath = file.getCanonicalPath();
-            if (!baseFolder.equals(fullPath))
-                relativePath = fullPath.substring(baseFolder.length() + 1);
-            else originalDirectory = true;
-        } catch (IOException e) {
-            return null;
-        } catch (Exception f) {
-            originalDirectory = true;
-            //continue
-        }
-        String as = PreferenceManager.getDefaultSharedPreferences(context).getString("URI", null);
-
-        Uri treeUri = null;
-        if (as != null) treeUri = Uri.parse(as);
-        if (treeUri == null) {
-            return null;
+        String volumeId = getVolumeId(context, baseFolder);
+        if (volumeId == null) {
+            return DocumentFile.fromFile(file);
         }
 
-        // start with root of SD card and then parse through document tree.
-        DocumentFile document = DocumentFile.fromTreeUri(context, treeUri);
-        /*if (originalDirectory) return document;
-        String[] parts = relativePath.split("\\/");
-        for (int i = 0; i < parts.length; i++) {
-            DocumentFile nextDocument = document.findFile(parts[i]);
+        String fullPath = file.getAbsolutePath();
+        String relativePath = fullPath.substring(baseFolder.length() + 1);
 
-            if (nextDocument == null) {
-                if ((i < parts.length - 1) || isDirectory) {
-                    nextDocument = document.createDirectory(parts[i]);
-                } else {
-                    nextDocument = document.createFile("image", parts[i]);
-                }
-            }
-            document = nextDocument;
-        }*/
+        String uri = "content://com.android.externalstorage.documents/tree/" + volumeId + "/" + relativePath;
+        Uri treeUri = Uri.parse(uri);
 
-        return document;
+        return DocumentFile.fromTreeUri(context, treeUri);
     }
 
     /**
@@ -204,5 +179,35 @@ public final class LollipopFileSystem implements FileSystem {
         }
         if (paths.isEmpty()) paths.add("/storage/sdcard1");
         return paths.toArray(new String[0]);
+    }
+
+    private static String getVolumeId(Context context, final String volumePath) {
+        try {
+            StorageManager mStorageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+
+            Class<?> storageVolumeClazz = Class.forName("android.os.storage.StorageVolume");
+
+            Method getVolumeList = mStorageManager.getClass().getMethod("getVolumeList");
+            Method getUuid = storageVolumeClazz.getMethod("getUuid");
+            Method getPath = storageVolumeClazz.getMethod("getPath");
+            Object result = getVolumeList.invoke(mStorageManager);
+
+            final int length = Array.getLength(result);
+            for (int i = 0; i < length; i++) {
+                Object storageVolumeElement = Array.get(result, i);
+                String path = (String) getPath.invoke(storageVolumeElement);
+
+                if (path != null) {
+                    if (path.equals(volumePath)) {
+                        return (String) getUuid.invoke(storageVolumeElement);
+                    }
+                }
+            }
+
+            // not found.
+            return null;
+        } catch (Exception ex) {
+            return null;
+        }
     }
 }
