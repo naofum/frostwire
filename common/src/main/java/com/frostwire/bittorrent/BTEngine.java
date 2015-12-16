@@ -23,6 +23,7 @@ import com.frostwire.jlibtorrent.alerts.*;
 import com.frostwire.jlibtorrent.swig.*;
 import com.frostwire.logging.Logger;
 import com.frostwire.search.torrent.TorrentCrawledSearchResult;
+import com.frostwire.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
@@ -696,7 +697,7 @@ public final class BTEngine {
             torrentFile = new File(ctx.torrentsDir, name + ".torrent");
             byte[] arr = ti.toEntry().bencode();
 
-            FileUtils.writeByteArrayToFile(torrentFile, arr);
+            Files.writeByteArrayToFile(ctx.fs, torrentFile, arr);
         } catch (Throwable e) {
             torrentFile = null;
             LOG.warn("Error saving torrent info to file", e);
@@ -806,7 +807,7 @@ public final class BTEngine {
             result = saveDir;
         }
 
-        if (result != null && !result.isDirectory() && !result.mkdirs()) {
+        if (result != null && !result.isDirectory() && !Files.mkdirs(ctx.fs, result)) {
             result = null;
             LOG.warn("Failed to create save dir to download");
         }

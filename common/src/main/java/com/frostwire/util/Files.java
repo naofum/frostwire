@@ -18,7 +18,12 @@
 
 package com.frostwire.util;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * This utility class is intended to provide the same
@@ -51,5 +56,35 @@ public final class Files {
 
         /* Otherwise, try to create a parent directory and then this directory */
         return mkdirs(fs, new File(parentDir)) && fs.mkdir(file);
+    }
+
+    public static void writeByteArrayToFile(FileSystem fs, File file, byte[] data) throws IOException {
+        OutputStream out = null;
+        try {
+            out = openOutputStream(fs, file);
+            out.write(data);
+            out.close(); // don't swallow close Exception if copy completes normally
+        } finally {
+            IOUtils.closeQuietly(out);
+        }
+    }
+
+    public static OutputStream openOutputStream(FileSystem fs, File file) throws IOException {
+        if (fs.exists(file)) {
+            if (fs.isDirectory(file)) {
+                throw new IOException("File '" + file + "' exists but is a directory");
+            }
+            if (fs.canWrite(file) == false) {
+                throw new IOException("File '" + file + "' cannot be written to");
+            }
+        } else {
+            File parent = file.getParentFile();
+            if (parent != null) {
+                if (!Files.mkdirs(fs, parent) && !fs.isDirectory(parent)) {
+                    throw new IOException("Directory '" + parent + "' could not be created");
+                }
+            }
+        }
+        return fs.outputStream(file);
     }
 }

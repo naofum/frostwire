@@ -18,7 +18,7 @@
 
 package com.frostwire.util;
 
-import java.io.File;
+import java.io.*;
 
 /**
  * This interface is to provide a limited functionality
@@ -32,7 +32,17 @@ public interface FileSystem {
 
     boolean exists(File file);
 
+    boolean isDirectory(File file);
+
+    boolean isFile(File file);
+
+    boolean canRead(File file);
+
+    boolean canWrite(File file);
+
     boolean mkdir(File file);
+
+    OutputStream outputStream(File file) throws IOException;
 
     FileSystem DEFAULT = new FileSystem() {
 
@@ -42,8 +52,33 @@ public interface FileSystem {
         }
 
         @Override
+        public boolean isDirectory(File file) {
+            return file.isDirectory();
+        }
+
+        @Override
+        public boolean isFile(File file) {
+            return file.isFile();
+        }
+
+        @Override
+        public boolean canRead(File file) {
+            return file.canRead();
+        }
+
+        @Override
+        public boolean canWrite(File file) {
+            return file.canWrite();
+        }
+
+        @Override
         public boolean mkdir(File file) {
             return file.mkdir();
+        }
+
+        @Override
+        public OutputStream outputStream(File file) throws IOException {
+            return new FileOutputStream(file);
         }
     };
 }
