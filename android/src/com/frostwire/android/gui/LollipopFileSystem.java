@@ -128,7 +128,7 @@ public final class LollipopFileSystem implements FileSystem {
         String fullPath = file.getAbsolutePath();
         String relativePath = fullPath.substring(baseFolder.length() + 1);
 
-        relativePath = relativePath.replace("/", "%3A");
+        relativePath = relativePath.replace("/", "%2F");
         String uri = "content://com.android.externalstorage.documents/tree/" + volumeId + "%3A" + relativePath;
         Uri treeUri = Uri.parse(uri);
 
