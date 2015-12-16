@@ -18,6 +18,8 @@
 
 package com.frostwire.util;
 
+import java.io.File;
+
 /**
  * @author gubatron
  * @author aldenml
@@ -25,4 +27,19 @@ package com.frostwire.util;
 public interface FileSystem {
 
     boolean mkdir(String path);
+
+    boolean mkdirs(String path);
+
+    FileSystem DEFAULT = new FileSystem() {
+
+        @Override
+        public boolean mkdir(String path) {
+            return new File(path).mkdir();
+        }
+
+        @Override
+        public boolean mkdirs(String path) {
+            return new File(path).mkdirs();
+        }
+    };
 }
