@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,10 +128,19 @@ public final class LollipopFileSystem implements FileSystem {
         String fullPath = file.getAbsolutePath();
         String relativePath = fullPath.substring(baseFolder.length() + 1);
 
-        String uri = "content://com.android.externalstorage.documents/tree/" + volumeId + "/" + relativePath;
+        String uri = "content://com.android.externalstorage.documents/tree/" + volumeId + "%3A" + relativePath;
         Uri treeUri = Uri.parse(uri);
 
-        return DocumentFile.fromTreeUri(context, treeUri);
+        try {
+            Class<?> clazz = Class.forName("android.support.v4.provider.TreeDocumentFile");
+            Constructor<?> c = clazz.getDeclaredConstructor(DocumentFile.class, Context.class, Uri.class);
+            c.setAccessible(true);
+            return (DocumentFile) c.newInstance(null, context, treeUri);
+        } catch (Throwable e) {
+            LOG.error("Error getting a Documentfile from file: " + file, e);
+        }
+
+        return DocumentFile.fromFile(file);
     }
 
     /**

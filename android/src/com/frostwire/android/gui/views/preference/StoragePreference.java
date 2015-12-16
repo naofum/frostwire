@@ -217,7 +217,7 @@ public class StoragePreference extends DialogPreference {
 
     // TODO: Delete this ugly hack.
     public static boolean isLollipopWithNoSDCardHACK(Context context) {
-        return SystemUtils.hasLollipopOrNewer() && SystemUtils.getExternalFilesDirs(context).length==1;
+        return true;//SystemUtils.hasLollipopOrNewer() && SystemUtils.getExternalFilesDirs(context).length==1;
     }
 
     private static final class StorageMount {
