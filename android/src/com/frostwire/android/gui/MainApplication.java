@@ -33,6 +33,7 @@ import com.frostwire.jlibtorrent.DHT;
 import com.frostwire.logging.Logger;
 import com.frostwire.search.CrawlPagedWebSearchPerformer;
 import com.frostwire.util.DirectoryUtils;
+import com.frostwire.util.FileSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -110,8 +111,9 @@ public class MainApplication extends Application {
         BTEngine.getInstance().reloadBTContext(SystemPaths.getTorrents(),
                 SystemPaths.getTorrentData(),
                 SystemPaths.getLibTorrent(this),
-                0,0,"0.0.0.0",false,false);
+                0, 0, "0.0.0.0", false, false);
         BTEngine.ctx.optimizeMemory = true;
+        BTEngine.ctx.fs = FileSystem.DEFAULT; // TODO: Refactor the reloadBTContext logic
         BTEngine.getInstance().start();
 
         boolean enable_dht = ConfigurationManager.instance().getBoolean(Constants.PREF_KEY_NETWORK_ENABLE_DHT);
