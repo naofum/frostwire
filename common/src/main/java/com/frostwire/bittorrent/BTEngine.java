@@ -808,7 +808,7 @@ public final class BTEngine {
             result = saveDir;
         }
 
-        if (result != null && !result.isDirectory() && !Files.mkdirs(ctx.fs, result)) {
+        if (result != null && !ctx.fs.isDirectory(result) && !Files.mkdirs(ctx.fs, result)) {
             result = null;
             LOG.warn("Failed to create save dir to download");
         }

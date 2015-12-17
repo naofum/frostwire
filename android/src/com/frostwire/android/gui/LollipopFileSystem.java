@@ -31,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -101,7 +102,7 @@ public final class LollipopFileSystem implements FileSystem {
             return false;
         }
         DocumentFile f = getDocumentFile(context, parent);
-        if (f != null) {
+        if (f != null && f.exists()) {
             try {
                 f = f.createDirectory(file.getName());
                 if (f != null && f.exists()) {
@@ -119,6 +120,10 @@ public final class LollipopFileSystem implements FileSystem {
     public OutputStream outputStream(File file) throws IOException {
         DocumentFile f = getDocumentFile(context, file);
         if (f != null) {
+            if (!f.exists()) {
+                f.getParentFile().createFile("image", file.getName());
+            }
+
             return context.getContentResolver().openOutputStream(f.getUri());
         } else {
             return new FileOutputStream(file);
@@ -148,7 +153,20 @@ public final class LollipopFileSystem implements FileSystem {
 
     public static DocumentFile getDocumentFile(Context context, File file) {
         Uri uri = getDocumentUri(context, file);
-        return uri != null ? DocumentFile.fromTreeUri(context, uri) : null;
+        if (uri == null) {
+            return null;
+        }
+
+//        try {
+//            Class<?> clazz = Class.forName("android.support.v4.provider.TreeDocumentFile");
+//            Constructor<?> c = clazz.getDeclaredConstructor(DocumentFile.class, Context.class, Uri.class);
+//            c.setAccessible(true);
+//            return (DocumentFile) c.newInstance(null, context, uri);
+//        } catch (Throwable e) {
+//            LOG.error("Error creating DocumentFile with uri: " + uri);
+//        }
+
+        return DocumentFile.fromTreeUri(context, uri);
     }
 
     public static String getPath(Context ctx, final Uri treeUri) {
