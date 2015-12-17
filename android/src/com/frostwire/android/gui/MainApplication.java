@@ -1,6 +1,6 @@
 /*
  * Created by Angel Leon (@gubatron), Alden Torres (aldenml)
- * Copyright (c) 2011-2015, FrostWire(R). All rights reserved.
+ * Copyright (c) 2011-2016, FrostWire(R). All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,9 +30,13 @@ import com.frostwire.android.util.ImageLoader;
 import com.frostwire.bittorrent.BTContext;
 import com.frostwire.bittorrent.BTEngine;
 import com.frostwire.jlibtorrent.DHT;
+import com.frostwire.jlibtorrent.LibTorrent;
+import com.frostwire.jlibtorrent.swig.swig_posix_file_functions;
+import com.frostwire.jlibtorrent.swig.swig_posix_stat;
 import com.frostwire.logging.Logger;
 import com.frostwire.search.CrawlPagedWebSearchPerformer;
 import com.frostwire.util.DirectoryUtils;
+import com.frostwire.util.FileSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,11 +50,15 @@ public class MainApplication extends Application {
 
     private static final Logger LOG = Logger.getLogger(MainApplication.class);
 
+    private static FileSystem FILE_SYSTEM = FileSystem.DEFAULT;
+
     @Override
     public void onCreate() {
         super.onCreate();
 
         try {
+
+            setupFileSystem();
 
             ignoreHardwareMenu();
             installHttpCache();
@@ -112,6 +120,7 @@ public class MainApplication extends Application {
                 SystemPaths.getLibTorrent(this),
                 0,0,"0.0.0.0",false,false);
         BTEngine.ctx.optimizeMemory = true;
+        BTEngine.ctx.fs = FILE_SYSTEM; // TODO: Review this logic and code
         BTEngine.getInstance().start();
 
         boolean enable_dht = ConfigurationManager.instance().getBoolean(Constants.PREF_KEY_NETWORK_ENABLE_DHT);
@@ -136,5 +145,34 @@ public class MainApplication extends Application {
         } catch (Throwable e) {
             LOG.error("Error during setup of temp directory", e);
         }
+    }
+
+    private void setupFileSystem() {
+        LibTorrent.setPosixFileFunctions(new swig_posix_file_functions() {
+            @Override
+            public int open(String pathname, int flags, int mode) {
+                return super.open(pathname, flags, mode);
+            }
+
+            @Override
+            public int mkdir(String pathname, int mode) {
+                return super.mkdir(pathname, mode);
+            }
+
+            @Override
+            public int rename(String oldpath, String newpath) {
+                return super.rename(oldpath, newpath);
+            }
+
+            @Override
+            public int remove(String pathname) {
+                return super.remove(pathname);
+            }
+
+            @Override
+            public int stat(String path, swig_posix_stat buf) {
+                return super.stat(path, buf);
+            }
+        });
     }
 }
