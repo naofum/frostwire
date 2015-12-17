@@ -19,6 +19,10 @@
 package com.frostwire.android.gui;
 
 import android.app.Application;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.net.Uri;
+import android.support.v4.provider.DocumentFile;
 import android.view.ViewConfiguration;
 import com.andrew.apollo.cache.ImageCache;
 import com.frostwire.android.core.ConfigurationManager;
@@ -31,12 +35,15 @@ import com.frostwire.android.util.SystemUtils;
 import com.frostwire.bittorrent.BTContext;
 import com.frostwire.bittorrent.BTEngine;
 import com.frostwire.jlibtorrent.DHT;
+import com.frostwire.jlibtorrent.LibTorrent;
+import com.frostwire.jlibtorrent.swig.swig_posix_wrapper;
 import com.frostwire.logging.Logger;
 import com.frostwire.search.CrawlPagedWebSearchPerformer;
 import com.frostwire.util.DirectoryUtils;
 import com.frostwire.util.FileSystem;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
@@ -146,7 +153,46 @@ public class MainApplication extends Application {
 
     private void setupFileSystem() {
         if (SystemUtils.hasLollipopOrNewer() && !SystemUtils.hasMarshmallowOrNewer()) {
-            FILE_SYSTEM = new LollipopFileSystem(this);
+            final Context ctx = this;
+            final ContentResolver cr = ctx.getContentResolver();
+
+            FILE_SYSTEM = new LollipopFileSystem(ctx);
+
+            LibTorrent.setPosixWrapper(new swig_posix_wrapper() {
+                @Override
+                public int open64(String pathname, int flags, int mode) {
+                    Uri uri = LollipopFileSystem.getDocumentUri(ctx, new File(pathname));
+
+                    if (uri != null) {
+                        try {
+                            return cr.openFileDescriptor(uri, "rw").getFd();
+                        } catch (FileNotFoundException e) {
+                            LOG.error("Error getting the native fd from posix wrapper", e);
+                        }
+                    }
+
+                    return super.open64(pathname, flags, mode);
+                }
+
+                @Override
+                public int mkdir(String pathname, int mode) {
+                    DocumentFile f = LollipopFileSystem.getDocumentFile(ctx, new File(pathname));
+
+                    if (!f.exists()) {
+                        FILE_SYSTEM.mkdir(new File(pathname));
+                    }
+
+                    if (f.exists() && f.isDirectory()) {
+                        try {
+                            return cr.openFileDescriptor(f.getUri(), "rw").getFd();
+                        } catch (FileNotFoundException e) {
+                            LOG.error("Error getting the native fd from posix wrapper", e);
+                        }
+                    }
+
+                    return super.mkdir(pathname, mode);
+                }
+            });
         }
     }
 }

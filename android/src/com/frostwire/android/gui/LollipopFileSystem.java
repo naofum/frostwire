@@ -106,6 +106,27 @@ public final class LollipopFileSystem implements FileSystem {
         }
     }
 
+    public static Uri getDocumentUri(Context context, File file) {
+        String baseFolder = getExtSdCardFolder(file, context);
+
+        if (baseFolder == null) {
+            return null;
+        }
+
+        String volumeId = getVolumeId(context, baseFolder);
+        if (volumeId == null) {
+            return null;
+        }
+
+        String fullPath = file.getAbsolutePath();
+        String relativePath = fullPath.substring(baseFolder.length() + 1);
+
+        relativePath = relativePath.replace("/", "%2F");
+        String uri = "content://com.android.externalstorage.documents/tree/" + volumeId + "%3A" + relativePath;
+
+        return Uri.parse(uri);
+    }
+
     /**
      * Get a DocumentFile corresponding to the given file (for writing on ExtSdCard on Android 5). If the file is not
      * existing, it is created.
@@ -113,7 +134,7 @@ public final class LollipopFileSystem implements FileSystem {
      * @param file The file.
      * @return The DocumentFile
      */
-    private static DocumentFile getDocumentFile(Context context, File file) {
+    public static DocumentFile getDocumentFile(Context context, File file) {
         String baseFolder = getExtSdCardFolder(file, context);
 
         if (baseFolder == null) {
