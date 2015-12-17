@@ -18,7 +18,10 @@
 
 package com.frostwire.util;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * This interface is to provide a limited functionality
@@ -39,6 +42,8 @@ public interface FileSystem {
     boolean canRead(File file);
 
     boolean canWrite(File file);
+
+    String getParent(File file);
 
     boolean mkdir(File file);
 
@@ -71,9 +76,15 @@ public interface FileSystem {
             return file.canWrite();
         }
 
+
         @Override
         public boolean mkdir(File file) {
             return file.mkdir();
+        }
+
+        @Override
+        public String getParent(File file) {
+            return file.getParent();
         }
 
         @Override
